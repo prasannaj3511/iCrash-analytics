@@ -1,0 +1,8 @@
+{
+  "name": "@icrash/browser",
+  "version": "1.0.0",
+  "description": "iCrash Analytics browser SDK",
+  "main": "icrash.js",
+  "browser": "icrash.js",
+  "license": "MIT"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@icrash/node",
+  "version": "1.0.0",
+  "description": "iCrash Analytics Node.js SDK (Express/Koa/Fastify friendly)",
+  "main": "index.js",
+  "engines": { "node": ">=18" },
+  "license": "MIT"
+}

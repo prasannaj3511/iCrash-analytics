@@ -1,0 +1,20 @@
+{
+  "name": "icrash-analytics",
+  "version": "2.0.0",
+  "description": "Self-hosted crash & error analytics (Sentry-style) for frontend and backend, multi-user and multi-project, on PostgreSQL.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "db:sync": "node --env-file-if-exists=.env scripts/db-sync.js",
+    "demo": "node examples/seed.js"
+  },
+  "engines": {
+    "node": ">=22.9"
+  },
+  "dependencies": {
+    "nodemailer": "^6.10.1",
+    "pg": "^8.13.0"
+  },
+  "license": "MIT"
+}

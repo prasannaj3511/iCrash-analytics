@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iCrash Analytics</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e5484d'/%3E%3Cpath d='M17 5 8 18h7l-1 9 10-14h-7z' fill='white'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f6f7f9;--panel:#fff;--panel2:#f0f2f5;--border:#e3e6eb;--text:#1b1f27;--muted:#6b7380;
+  --accent:#5b5bd6;--accent-bg:#ededfc;--red:#e5484d;--red-bg:#fdeced;--amber:#d98a00;--amber-bg:#fff3d9;
+  --blue:#2f7de1;--blue-bg:#e6f0fd;--green:#2a9d5c;--green-bg:#e3f5ea;--grey-bg:#eceef2;--bar:#5b5bd6;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#0f1115;--panel:#171a20;--panel2:#1d2129;--border:#2a2f39;--text:#e7e9ee;--muted:#8d95a3;
+  --accent:#8b8bf0;--accent-bg:#26264a;--red:#ff6b70;--red-bg:#3a1d20;--amber:#f0b429;--amber-bg:#3a2e12;
+  --blue:#6aa7f5;--blue-bg:#16283f;--green:#4cc38a;--green-bg:#14301f;--grey-bg:#262b34;--bar:#8b8bf0}}
+:root[data-theme=dark]{
+  --bg:#0f1115;--panel:#171a20;--panel2:#1d2129;--border:#2a2f39;--text:#e7e9ee;--muted:#8d95a3;
+  --accent:#8b8bf0;--accent-bg:#26264a;--red:#ff6b70;--red-bg:#3a1d20;--amber:#f0b429;--amber-bg:#3a2e12;
+  --blue:#6aa7f5;--blue-bg:#16283f;--green:#4cc38a;--green-bg:#14301f;--grey-bg:#262b34;--bar:#8b8bf0}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--accent);text-decoration:none}
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;padding:4px 8px 14px}
+.logo{width:28px;height:28px;border-radius:8px;background:var(--red);display:grid;place-items:center}
+.sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 8px 4px;display:flex;justify-content:space-between;align-items:center}
+.proj{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;color:var(--text)}
+.proj:hover{background:var(--panel2)}.proj.on{background:var(--accent-bg);font-weight:600}
+.avatar{width:24px;height:24px;border-radius:6px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;flex:none}
+.proj .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font-size:11px;background:var(--red-bg);color:var(--red);padding:1px 7px;border-radius:99px;font-weight:600}
+main{padding:24px 28px;min-width:0;max-width:1200px;width:100%}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px}
+.sub{color:var(--muted)}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{padding:8px 14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--text);border-color:var(--accent);font-weight:600}
+.btn{border:1px solid var(--border);background:var(--panel);border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn:hover{background:var(--panel2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{opacity:.9}
+.btn.danger{color:var(--red)}
+.btn.sm{padding:3px 9px;font-size:12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px}
+.stat b{display:block;font-size:24px}.stat span{color:var(--muted);font-size:12px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters input,.filters select,.field input,.field select{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+.filters input{flex:1;min-width:180px}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 14px;background:var(--panel2);font-weight:600}
+td{padding:12px 14px;border-top:1px solid var(--border);vertical-align:top}
+tr.row{cursor:pointer}tr.row:hover td{background:var(--panel2)}
+.ttl{font-weight:600;word-break:break-word}.cul{color:var(--muted);font-family:var(--mono);font-size:12px;margin-top:2px}
+.num{text-align:right;white-space:nowrap}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.03em}
+.b-fatal,.b-error{background:var(--red-bg);color:var(--red)}.b-warning{background:var(--amber-bg);color:var(--amber)}
+.b-info,.b-debug{background:var(--blue-bg);color:var(--blue)}.b-resolved{background:var(--green-bg);color:var(--green)}
+.b-ignored,.b-unresolved{background:var(--grey-bg);color:var(--muted)}.b-unresolved{background:var(--accent-bg);color:var(--accent)}
+.chart{display:flex;align-items:flex-end;gap:3px;height:120px}
+.chart i{flex:1;background:var(--bar);border-radius:3px 3px 0 0;min-height:2px;opacity:.85;position:relative}
+.chart i:hover{opacity:1}
+.chart-x{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:4px}
+.spark{height:34px;width:96px;display:flex;align-items:flex-end;gap:1px}.spark i{flex:1;background:var(--bar);opacity:.7;min-height:1px}
+pre,code{font-family:var(--mono);font-size:12.5px}
+pre{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;margin:6px 0 12px;position:relative}
+.frame{display:flex;gap:10px;padding:6px 10px;border-top:1px solid var(--border);font-family:var(--mono);font-size:12.5px;flex-wrap:wrap}
+.frame:first-child{border-top:0}.frame.lib{opacity:.55}.frame .fn{font-weight:600}.frame .loc{color:var(--muted);word-break:break-all}
+.frames{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:4px 12px;font-size:13px}.kv dt{color:var(--muted)}.kv dd{margin:0;word-break:break-all}
+.crumb{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--border);font-size:13px}
+.crumb:first-child{border-top:0}.crumb time{color:var(--muted);font-family:var(--mono);font-size:12px;flex:none}.crumb .cat{color:var(--accent);flex:none;min-width:80px}
+.two{display:grid;grid-template-columns:2fr 1fr;gap:16px}@media(max-width:900px){.two{grid-template-columns:1fr}}
+.evnav{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.empty{text-align:center;color:var(--muted);padding:48px 16px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:10;padding:16px}
+.modal{background:var(--panel);border-radius:14px;padding:22px;width:min(440px,100%);border:1px solid var(--border)}
+.field{margin-bottom:12px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}.field input,.field select{width:100%}
+.row-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.copy{position:absolute;top:6px;right:6px}
+.snip-tabs{display:flex;gap:6px;margin-bottom:6px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 16px;border-radius:8px;z-index:20}
+.mobile-bar{display:none}
+@media(max-width:760px){
+  .app{grid-template-columns:1fr}aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--border)}
+  main{padding:16px}th.hide-s,td.hide-s{display:none}
+}
+
+.hidden{display:none!important}
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:16px}
+.login{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px;width:min(400px,100%)}
+.login .brand{padding:0 0 18px;font-size:18px}.login h1{font-size:18px;margin-bottom:4px}
+.err{color:var(--red);background:var(--red-bg);padding:8px 10px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.nav a{display:flex;gap:8px;align-items:center;padding:7px 8px;border-radius:8px;color:var(--text)}
+.nav a:hover{background:var(--panel2)}.nav a.on{background:var(--accent-bg);font-weight:600}
+.me{border-top:1px solid var(--border);padding-top:10px;margin-top:6px;display:flex;flex-direction:column;gap:6px}
+.me .who{padding:0 8px;min-width:0}.me .who b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me .who span{font-size:12px;color:var(--muted);word-break:break-all}
+.me .acts{display:flex;gap:6px;flex-wrap:wrap}
+.step{display:grid;grid-template-columns:34px 1fr;gap:14px}
+.step .no{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;display:grid;place-items:center;font-size:13px}
+.step h2{margin-top:2px}.step p,.step li{color:var(--text)}.step ul{padding-left:18px;margin:6px 0}
+.guide-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.guide-top select{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+.hint{background:var(--blue-bg);color:var(--text);border-left:3px solid var(--blue);padding:8px 12px;border-radius:6px;font-size:13px;margin:8px 0}
+.warn{background:var(--amber-bg);border-left-color:var(--amber)}
+.inline-code{background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:0 5px;font-family:var(--mono);font-size:12.5px}
+.badge.b-superadmin{background:var(--accent-bg);color:var(--accent)}.badge.b-user{background:var(--grey-bg);color:var(--muted)}
+.badge.b-off{background:var(--red-bg);color:var(--red)}
+.cred{margin-top:8px}
+
+.st-type{font-size:16px;font-weight:700}.st-msg{font-family:var(--mono);font-size:13px;margin:4px 0 10px;word-break:break-word}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12.5px}
+.chip i{font-style:normal;padding:2px 9px;background:var(--panel2);color:var(--muted)}.chip b{padding:2px 9px;font-family:var(--mono);font-weight:500}
+.chip b.ok{color:var(--green)}.chip b.bad{color:var(--red)}
+.fr{border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.fr.lib .fr-head{opacity:.7}
+.fr-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:8px 12px;font-size:13px;background:var(--panel)}
+.fr-head.clickable{cursor:pointer}.fr-head.clickable:hover{background:var(--panel2)}
+.fr-head .loc{font-weight:500;word-break:break-all}.fr-head .in{color:var(--muted);font-family:var(--mono);font-size:12px}
+.fr-head .fn{font-family:var(--mono);font-size:12.5px}.fr-head .chev{margin-left:auto;color:var(--muted)}
+.code{background:var(--panel2);border-top:1px solid var(--border);overflow-x:auto;font-family:var(--mono);font-size:12.5px;padding:4px 0}
+.cl{display:flex;white-space:pre;min-width:max-content}.cl .ln{flex:none;width:52px;text-align:right;padding-right:14px;color:var(--muted);user-select:none}
+.cl.hit{background:var(--red-bg)}.cl.hit .ln{color:var(--red);font-weight:700}
+.st-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.bc{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--border)}.bc:first-child{border-top:0}
+.bc .ic{flex:none;width:28px;height:28px;border-radius:50%;background:var(--panel2);display:grid;place-items:center;font-size:14px}
+.bc.ev .ic{background:var(--accent-bg);color:var(--accent);font-weight:700}
+.bc .body{flex:1;min-width:0}.bc .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bc .cat{font-weight:600}.bc .lv{font-size:12px;margin-left:8px}.bc .tm{color:var(--muted);font-size:12px;font-family:var(--mono)}
+.bc .msg{font-family:var(--mono);font-size:12.5px;margin-top:3px;word-break:break-word;white-space:pre-wrap}
+.bc details{margin-top:6px}.bc summary{cursor:pointer;color:var(--muted);font-size:12px}
+.bc pre{margin:6px 0 0;font-size:12px}
+.lv-error,.lv-fatal{color:var(--red)}.lv-warning{color:var(--amber)}.lv-info{color:var(--blue)}.lv-debug{color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="login" class="hidden"></div>
+<div class="app hidden" id="app">
+  <aside>
+    <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 32 32"><path d="M17 5 8 18h7l-1 9 10-14h-7z" fill="#fff"/></svg></div>iCrash Analytics</div>
+    <div class="nav">
+      <a href="#/guide" id="navGuide">📘 User guide</a>
+      <a href="#/users" id="navUsers" class="hidden">👥 Users</a>
+    </div>
+    <div class="sec">Projects <button class="btn sm" id="newProj" title="New project">+ New</button></div>
+    <div id="projList"></div>
+    <div style="flex:1"></div>
+    <div class="me">
+      <div class="who"><b id="meName"></b><span id="meEmail"></span></div>
+      <div class="acts"><button class="btn sm" id="acctBtn">Account</button><button class="btn sm" id="themeBtn">Theme</button><button class="btn sm" id="logoutBtn">Sign out</button></div>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div id="overlay"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ago = (ts) => {
+  const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+  if (s < 60) return s + 's ago'; if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago'; return Math.floor(s / 86400) + 'd ago';
+};
+const fmt = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n));
+const when = (ts) => new Date(ts).toLocaleString();
+
+let me = null;
+let projects = [];
+let toastTimer;
+const isAdmin = () => me?.role === 'superadmin';
+
+async function api(path, opts = {}) {
+  const res = await fetch('/api' + path, {
+    ...opts,
+    headers: { 'content-type': 'application/json', 'x-icrash-csrf': '1' },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && !path.startsWith('/auth/login')) { showLogin(); throw Object.assign(new Error('Please sign in'), { silent: true }); }
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach((t) => t.remove());
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.append(t);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2400);
+}
+
+function modal(html) {
+  const bg = document.createElement('div'); bg.className = 'modal-bg';
+  bg.innerHTML = `<div class="modal">${html}</div>`;
+  bg.addEventListener('mousedown', (e) => { if (e.target === bg && !bg.dataset.lock) bg.remove(); });
+  $('#overlay').append(bg);
+  // `autofocus` is ignored for elements inserted after page load, so focus explicitly.
+  const first = bg.querySelector('[autofocus]') || bg.querySelector('input,select');
+  if (first) setTimeout(() => first.focus(), 0);
+  return bg;
+}
+
+/* ---------- Login / session ---------- */
+function showLogin() {
+  me = null;
+  document.querySelectorAll('.modal-bg').forEach((m) => m.remove());
+  $('#app').classList.add('hidden');
+  const el = $('#login'); el.classList.remove('hidden');
+  el.innerHTML = `<div class="login-wrap"><form class="login" id="lf" autocomplete="on">
+    <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 32 32"><path d="M17 5 8 18h7l-1 9 10-14h-7z" fill="#fff"/></svg></div>iCrash Analytics</div>
+    <h1>Sign in</h1><p class="sub" style="margin-top:0">Use the account your administrator created for you.</p>
+    <div id="lerr"></div>
+    <div class="field"><label for="le">Email</label><input id="le" type="email" name="email" autocomplete="username" required autofocus></div>
+    <div class="field"><label for="lp">Password</label><input id="lp" type="password" name="password" autocomplete="current-password" required></div>
+    <button class="btn primary" style="width:100%" id="lb">Sign in</button></form></div>`;
+  $('#lf').onsubmit = async (e) => {
+    e.preventDefault(); $('#lb').disabled = true; $('#lerr').innerHTML = '';
+    try {
+      const r = await api('/auth/login', { method: 'POST', body: { email: $('#le').value, password: $('#lp').value } });
+      me = r.user; enterApp();
+    } catch (err) { $('#lerr').innerHTML = `<div class="err">${esc(err.message)}</div>`; $('#lb').disabled = false; }
+  };
+}
+
+function enterApp() {
+  $('#login').classList.add('hidden'); $('#login').innerHTML = '';
+  $('#app').classList.remove('hidden');
+  $('#meName').textContent = me.name || me.email;
+  $('#meEmail').textContent = `${me.email} · ${me.role === 'superadmin' ? 'super admin' : 'user'}`;
+  $('#navUsers').classList.toggle('hidden', !isAdmin());
+  route();
+}
+
+async function logout() {
+  try { await api('/auth/logout', { method: 'POST' }); } catch {}
+  location.hash = ''; showLogin();
+}
+
+function accountModal() {
+  const m = modal(`<h2>Change password</h2><div id="aerr"></div>
+    <div class="field"><label>Current password</label><input id="ac" type="password" autocomplete="current-password"></div>
+    <div class="field"><label>New password (min 8 characters)</label><input id="an" type="password" autocomplete="new-password"></div>
+    <p class="sub" style="font-size:12px">You'll stay signed in here; other devices are signed out.</p>
+    <div class="row-actions"><button class="btn" id="ax">Cancel</button><button class="btn primary" id="ak">Update password</button></div>`);
+  $('#ax', m).onclick = () => m.remove();
+  $('#ak', m).onclick = async () => {
+    try { await api('/auth/change-password', { method: 'POST', body: { current: $('#ac', m).value, next: $('#an', m).value } }); m.remove(); toast('Password updated'); }
+    catch (e) { $('#aerr', m).innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  };
+}
+
+const dsnFor = (p) => `${location.protocol}//${p.public_key}@${location.host}/${p.id}`;
+
+async function loadProjects() {
+  projects = await api('/projects');
+  const cur = currentRoute().pid;
+  $('#projList').innerHTML = projects.length ? projects.map((p) => `
+    <a class="proj ${p.id === cur ? 'on' : ''}" href="#/p/${p.id}">
+      <span class="avatar">${esc(p.name[0].toUpperCase())}</span><span class="n" title="${p.access !== 'owner' ? esc(p.owner_email) : ''}">${esc(p.name)}</span>${p.access === 'member' ? '<span class="badge b-user" title="Shared with you" style="font-size:10px;padding:1px 6px">shared</span>' : ''}
+      ${p.open_issues ? `<span class="pill">${p.open_issues}</span>` : ''}</a>`).join('')
+    : '<div class="sub" style="padding:8px">No projects yet.</div>';
+  document.querySelectorAll('.nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === location.hash));
+}
+
+function currentRoute() {
+  const pg = location.hash.match(/^#\/(users|guide)/);
+  if (pg) return { page: pg[1] };
+  const m = location.hash.match(/^#\/(p|i)\/(\d+)(?:\/(\w+))?/);
+  if (!m) return {};
+  return m[1] === 'p' ? { pid: +m[2], tab: m[3] || 'issues' } : { iid: +m[2] };
+}
+
+function spark(series) {
+  const max = Math.max(1, ...series.map((s) => s.n));
+  return `<div class="spark">${series.map((s) => `<i style="height:${(s.n / max) * 100}%" title="${s.n}"></i>`).join('')}</div>`;
+}
+
+function chart(series, days) {
+  const max = Math.max(1, ...series.map((s) => s.n));
+  const label = (t) => new Date(t).toLocaleDateString(undefined, days <= 1 ? { hour: 'numeric' } : { month: 'short', day: 'numeric' });
+  return `<div class="chart">${series.map((s) => `<i style="height:${(s.n / max) * 100}%" title="${esc(label(s.t))}: ${s.n} events"></i>`).join('')}</div>
+    <div class="chart-x"><span>${label(series[0].t)}</span><span>${label(series[series.length - 1].t)}</span></div>`;
+}
+
+/* ---------- Welcome / empty ---------- */
+function welcome() {
+  $('#main').innerHTML = `<div class="empty"><h1>Welcome to iCrash Analytics</h1>
+    <p>Create a project to get a DSN, then drop the SDK into your frontend or backend.</p>
+    <p class="sub">New here? Read the <a href="#/guide">user guide</a>. Or ask a project owner to add you to their project.</p>
+    <button class="btn primary" id="wNew">Create your first project</button></div>`;
+  $('#wNew').onclick = newProject;
+}
+
+function newProject() {
+  const m = modal(`<h2>New project</h2>
+    <div class="field"><label>Name</label><input id="pn" type="text" placeholder="e.g. storefront-web" autocomplete="off" maxlength="80" autofocus></div>
+    <div class="field"><label>Platform</label><select id="pp">
+      <option value="javascript">Browser (JavaScript)</option><option value="node">Node.js</option><option value="other">Other / HTTP API</option></select></div>
+    <div class="row-actions"><button class="btn" id="pc">Cancel</button><button class="btn primary" id="pk">Create</button></div>`);
+  $('#pc', m).onclick = () => m.remove();
+  const go = async () => {
+    const name = $('#pn', m).value.trim(); if (!name) return;
+    const p = await api('/projects', { method: 'POST', body: { name, platform: $('#pp', m).value } });
+    m.remove(); await loadProjects(); location.hash = `#/p/${p.id}/setup`;
+  };
+  $('#pk', m).onclick = go; $('#pn', m).addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+}
+
+/* ---------- Project view ---------- */
+const filter = { status: 'unresolved', q: '', level: '', sort: 'last_seen' };
+
+async function projectView(pid, tab) {
+  const p = projects.find((x) => x.id === pid);
+  if (!p) { location.hash = ''; return; }
+  $('#main').innerHTML = `
+    <div class="head"><div><h1>${esc(p.name)}</h1><div class="sub">${esc(p.platform)} · project #${p.id}${p.access !== 'owner' ? ' · owner ' + esc(p.owner_email) : ''}</div></div></div>
+    <div class="tabs">${['issues', 'stats', 'setup'].map((t) => `<a class="tab ${t === tab ? 'on' : ''}" href="#/p/${pid}/${t}" style="color:inherit">${{ issues: 'Issues', stats: 'Stats', setup: 'Setup' }[t]}</a>`).join('')}</div>
+    <div id="tabBody"></div>`;
+  ({ issues: issuesTab, stats: statsTab, setup: setupTab }[tab] || issuesTab)(p);
+}
+
+async function issuesTab(p) {
+  const body = $('#tabBody');
+  body.innerHTML = `
+    <div class="filters">
+      <input id="fq" placeholder="Search title or culprit…" value="${esc(filter.q)}">
+      <select id="fs">${['unresolved', 'resolved', 'ignored', 'all'].map((s) => `<option ${filter.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <select id="fl"><option value="">any level</option>${['fatal', 'error', 'warning', 'info'].map((s) => `<option ${filter.level === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <select id="fo">${[['last_seen', 'Last seen'], ['first_seen', 'First seen'], ['count', 'Events'], ['users', 'Users']].map(([v, l]) => `<option value="${v}" ${filter.sort === v ? 'selected' : ''}>Sort: ${l}</option>`).join('')}</select>
+    </div><div id="list"></div>`;
+  const load = async () => {
+    const qs = new URLSearchParams({ status: filter.status, sort: filter.sort });
+    if (filter.q) qs.set('q', filter.q); if (filter.level) qs.set('level', filter.level);
+    const rows = await api(`/projects/${p.id}/issues?${qs}`);
+    $('#list').innerHTML = rows.length ? `<table><thead><tr><th>Issue</th><th class="hide-s">Level</th><th class="num">Events</th><th class="num hide-s">Users</th><th class="hide-s">Last seen</th></tr></thead><tbody>
+      ${rows.map((i) => `<tr class="row" data-id="${i.id}"><td><div class="ttl">${esc(i.title)}</div><div class="cul">${esc(i.culprit || '')}</div>
+        <div style="margin-top:4px"><span class="badge b-${i.status}">${i.status}</span> <span class="sub" style="font-size:12px">first seen ${ago(i.first_seen)}${i.last_release ? ' · ' + esc(i.last_release) : ''}</span></div></td>
+        <td class="hide-s"><span class="badge b-${i.level}">${i.level}</span></td>
+        <td class="num"><b>${fmt(i.count)}</b></td><td class="num hide-s">${fmt(i.users)}</td><td class="hide-s">${ago(i.last_seen)}</td></tr>`).join('')}
+      </tbody></table>` : `<div class="empty card">No ${filter.status === 'all' ? '' : filter.status + ' '}issues. ${filter.q ? '' : `Send a test event from the <a href="#/p/${p.id}/setup">Setup</a> tab.`}</div>`;
+    document.querySelectorAll('tr.row').forEach((r) => r.onclick = () => location.hash = '#/i/' + r.dataset.id);
+  };
+  let t; $('#fq').oninput = (e) => { filter.q = e.target.value; clearTimeout(t); t = setTimeout(load, 250); };
+  $('#fs').onchange = (e) => { filter.status = e.target.value; load(); };
+  $('#fl').onchange = (e) => { filter.level = e.target.value; load(); };
+  $('#fo').onchange = (e) => { filter.sort = e.target.value; load(); };
+  load();
+}
+
+async function statsTab(p) {
+  const body = $('#tabBody');
+  const render = async (days) => {
+    const s = await api(`/projects/${p.id}/stats?days=${days}`);
+    const bars = (rows) => rows.length ? rows.map((r) => `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${esc(r.k)}</span><b>${fmt(r.n)}</b></div>`).join('') : '<div class="sub">No data</div>';
+    body.innerHTML = `
+      <div class="filters"><select id="sd">${[[1, 'Last 24 hours'], [7, 'Last 7 days'], [14, 'Last 14 days'], [30, 'Last 30 days']].map(([v, l]) => `<option value="${v}" ${v === days ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="stats"><div class="stat"><b>${fmt(s.totals.n)}</b><span>Events</span></div><div class="stat"><b>${fmt(s.totals.new_issues)}</b><span>New issues</span></div><div class="stat"><b>${fmt(s.totals.users)}</b><span>Affected users</span></div></div>
+      <div class="card"><h2>Events over time</h2>${chart(s.series, days)}</div>
+      <div class="two"><div class="card"><h2>Environments</h2>${bars(s.environments)}</div><div class="card"><h2>Releases</h2>${bars(s.releases)}</div></div>`;
+    $('#sd').onchange = (e) => render(+e.target.value);
+  };
+  render(14);
+}
+
+function snippets(p) {
+  const dsn = dsnFor(p), host = location.origin;
+  return {
+    'Browser': `<script src="${host}/sdk/icrash.js"><\/script>
+<script>
+  ICrash.init({ dsn: '${dsn}', environment: 'production', release: '1.0.0' });
+  // manual:  ICrash.captureException(err);  ICrash.captureMessage('hi', 'info');
+  // context: ICrash.setUser({ id: '42', email: 'a@b.com' });  ICrash.setTag('plan', 'pro');
+<\/script>`,
+    'Node.js': `// npm i ${'<path-to>'}/icrash-analytics/sdk/node
+const icrash = require('@icrash/node');
+icrash.init({ dsn: '${dsn}', environment: process.env.NODE_ENV, release: '1.0.0' });
+
+// Express
+app.use(icrash.requestHandler());
+// ...your routes...
+app.use(icrash.errorHandler());
+
+// manual
+icrash.captureException(err);`,
+    'cURL / any language': `curl -X POST ${host}/api/${p.id}/ingest \\
+  -H 'content-type: application/json' \\
+  -H 'x-icrash-key: ${p.public_key}' \\
+  -d '{"type":"Error","message":"Something broke","level":"error","stack":"Error: x\\n    at fn (app.js:10:5)","environment":"production"}'`,
+  };
+}
+
+function setupTab(p) {
+  const sn = snippets(p), names = Object.keys(sn);
+  let cur = p.platform === 'node' ? 'Node.js' : p.platform === 'other' ? 'cURL / any language' : 'Browser';
+  const body = $('#tabBody');
+  const draw = () => {
+    body.innerHTML = `
+      <div class="card"><h2>Your DSN</h2><p class="sub">Public key + project id. Safe to ship in frontend code; it can only send events.</p>
+        <pre id="dsn">${esc(dsnFor(p))}<button class="btn sm copy" data-copy="${esc(dsnFor(p))}">Copy</button></pre></div>
+      <div class="card"><h2>Install</h2><div class="snip-tabs">${names.map((n) => `<button class="btn sm ${n === cur ? 'primary' : ''}" data-s="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+        <pre>${esc(sn[cur])}<button class="btn sm copy" data-copy="${esc(sn[cur])}">Copy</button></pre>
+        <button class="btn" id="test">Send test event</button></div>
+      <div class="card"><h2>Team</h2>
+        <p class="sub" style="margin-top:0">Users who can open this project, see its issues and DSN, and resolve or ignore issues. They also get alert emails.${p.access === 'member' ? '' : ' Pick a user from the list. The super admin creates accounts.'}</p>
+        <div id="team"><span class="sub">Loading…</span></div>
+        <form id="teamForm" class="${p.access === 'member' ? 'hidden' : ''}" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <select id="teamEmail" required style="flex:1;min-width:200px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px"><option value="">Loading users…</option></select>
+          <button class="btn primary" id="teamAdd" disabled>Add user</button></form>
+        <div id="teamErr"></div></div>
+      <div class="card"><h2>Alert emails</h2>
+        <p class="sub" style="margin-top:0">Who gets an email when a <b>new issue</b> appears or a resolved one <b>comes back</b> in this project (max 10 emails per hour).</p>
+        <div id="rcpt"><span class="sub">Loading…</span></div>
+        <form id="rcptForm" class="${p.access === 'member' ? 'hidden' : ''}" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <input id="rcptEmail" type="email" placeholder="teammate@company.com" autocomplete="off" required style="flex:1;min-width:200px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px">
+          <button class="btn primary" id="rcptAdd">Add email</button></form>
+        <div id="rcptErr"></div></div>
+      ${p.access === 'member' ? '' : `<div class="card"><h2>Danger zone</h2><div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="rot">Rotate key</button><button class="btn danger" id="del">Delete project</button></div></div>`}`;
+    body.querySelectorAll('[data-s]').forEach((b) => b.onclick = () => { cur = b.dataset.s; draw(); });
+    body.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => { navigator.clipboard.writeText(b.dataset.copy).then(() => toast('Copied'), () => toast('Copy failed')); });
+    const loadCandidates = async () => {
+      if (p.access === 'member') return;
+      const sel = $('#teamEmail');
+      try {
+        const users = await api(`/projects/${p.id}/member-candidates`);
+        sel.innerHTML = users.length
+          ? `<option value="">Select a user…</option>${users.map((x) => `<option value="${esc(x.email)}">${esc(x.name && x.name !== x.email ? `${x.name} (${x.email})` : x.email)}</option>`).join('')}`
+          : '<option value="">No other users to add</option>';
+        sel.disabled = !users.length; $('#teamAdd').disabled = !users.length;
+      } catch (e) { sel.innerHTML = '<option value="">Could not load users</option>'; sel.disabled = true; }
+    };
+    const loadTeam = async () => {
+      loadCandidates();
+      try {
+        const r = await api(`/projects/${p.id}/members`);
+        const canManage = r.access !== 'member';
+        $('#team').innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="badge b-superadmin" style="text-transform:none" title="Project owner">${esc(r.owner.name || r.owner.email)} · owner</span>
+          ${r.members.map((x) => `<span class="badge b-unresolved" style="text-transform:none;display:inline-flex;gap:6px;align-items:center" title="${esc(x.email)}">${esc(x.name || x.email)}
+            ${canManage || x.user_id === me.id ? `<button data-tm="${x.user_id}" title="${x.user_id === me.id ? 'Leave project' : 'Remove'}" style="border:0;background:none;cursor:pointer;color:inherit;padding:0;font-size:14px;line-height:1">×</button>` : ''}</span>`).join('')}</div>
+          ${r.members.length ? '' : '<div class="sub" style="margin-top:8px">Only the owner so far.</div>'}`;
+        $('#team').querySelectorAll('[data-tm]').forEach((b) => b.onclick = async () => {
+          const self = +b.dataset.tm === me.id;
+          if (self && !confirm('Leave this project? You will lose access to it.')) return;
+          await api(`/projects/${p.id}/members/${b.dataset.tm}`, { method: 'DELETE' });
+          if (self) { await loadProjects(); location.hash = ''; } else loadTeam();
+        });
+      } catch (e) { $('#team').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+    };
+    loadTeam();
+    $('#teamForm').onsubmit = async (e) => {
+      e.preventDefault(); $('#teamErr').innerHTML = ''; $('#teamAdd').disabled = true;
+      if (!$('#teamEmail').value) { $('#teamErr').innerHTML = '<div class="err" style="margin-top:10px">Select a user first</div>'; $('#teamAdd').disabled = false; return; }
+      try { await api(`/projects/${p.id}/members`, { method: 'POST', body: { email: $('#teamEmail').value } }); toast('User added to project'); await loadTeam(); }
+      catch (err) { $('#teamErr').innerHTML = `<div class="err" style="margin-top:10px">${esc(err.message)}</div>`; $('#teamAdd').disabled = false; }
+    };
+    const loadRcpt = async () => {
+      try {
+        const r = await api(`/projects/${p.id}/recipients`);
+        $('#rcpt').innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="badge b-user" title="Project owner (always receives alerts)">${esc(r.owner)} · owner</span>
+          ${r.recipients.map((x) => `<span class="badge b-unresolved" style="text-transform:none;display:inline-flex;gap:6px;align-items:center">${esc(x.email)}
+            ${p.access === 'member' ? '' : `<button data-rm="${x.id}" title="Remove" style="border:0;background:none;cursor:pointer;color:inherit;padding:0;font-size:14px;line-height:1">×</button>`}</span>`).join('')}</div>`;
+        $('#rcpt').querySelectorAll('[data-rm]').forEach((b) => b.onclick = async () => { await api(`/projects/${p.id}/recipients/${b.dataset.rm}`, { method: 'DELETE' }); loadRcpt(); });
+      } catch (e) { $('#rcpt').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+    };
+    loadRcpt();
+    $('#rcptForm').onsubmit = async (e) => {
+      e.preventDefault(); $('#rcptErr').innerHTML = ''; $('#rcptAdd').disabled = true;
+      try { await api(`/projects/${p.id}/recipients`, { method: 'POST', body: { email: $('#rcptEmail').value } }); $('#rcptEmail').value = ''; toast('Email added'); await loadRcpt(); }
+      catch (err) { $('#rcptErr').innerHTML = `<div class="err" style="margin-top:10px">${esc(err.message)}</div>`; }
+      $('#rcptAdd').disabled = false;
+    };
+    $('#test').onclick = async () => {
+      const r = await fetch(`/api/${p.id}/ingest`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-icrash-key': p.public_key },
+        body: JSON.stringify({ type: 'TestError', message: 'Test event from the dashboard', level: 'warning', stack: 'TestError: Test event\n    at sendTest (dashboard.js:1:1)', environment: 'test' }) });
+      toast(r.ok ? 'Test event sent' : 'Failed: ' + r.status); loadProjects();
+    };
+    if ($('#rot')) $('#rot').onclick = async () => {
+      if (!confirm('Rotate the key? Apps using the old DSN will stop reporting until updated.')) return;
+      Object.assign(p, await api(`/projects/${p.id}/rotate-key`, { method: 'POST' })); draw(); toast('Key rotated');
+    };
+    if ($('#del')) $('#del').onclick = async () => {
+      if (!confirm(`Delete "${p.name}" and all its data? This cannot be undone.`)) return;
+      await api(`/projects/${p.id}`, { method: 'DELETE' }); await loadProjects(); location.hash = '';
+    };
+  };
+  draw();
+}
+
+/* ---------- Issue view ---------- */
+const fmtTime = (t) => new Date(t).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3, timeZoneName: 'short' });
+const frameInApp = (f) => (f.in_app !== undefined ? f.in_app : !/node_modules|^node:|icrash/.test(f.file));
+
+function codeLines(f) {
+  const pre = f.pre_context || [], post = f.post_context || [];
+  const start = f.context_start || Math.max(1, f.line - pre.length);
+  return [...pre, f.context_line, ...post].map((l, k) => {
+    const n = start + k;
+    return `<div class="cl ${n === f.line ? 'hit' : ''}"><span class="ln">${n}</span><span class="tx">${esc(l) || ' '}</span></div>`;
+  }).join('');
+}
+
+function stackCard(ev) {
+  const frames = ev.frames || [];
+  const head = `<div class="st-type">${esc(ev.type)}</div><div class="st-msg">${esc(ev.message)}</div>
+    <div class="chips"><span class="chip"><i>mechanism</i><b>${esc(ev.mechanism || 'generic')}</b></span>
+      <span class="chip"><i>handled</i><b class="${ev.handled === false ? 'bad' : 'ok'}">${ev.handled === false ? 'false' : 'true'}</b></span></div>`;
+  if (!frames.length) return `<div class="card"><h2>Stack trace</h2>${head}<span class="sub">No stack trace was captured.</span></div>`;
+  const shown = frames.map((f, i) => i === 0 || frameInApp(f));
+  if (shown.filter(Boolean).length < Math.min(3, frames.length)) frames.forEach((f, i) => { if (i < 3) shown[i] = true; });
+  const hidden = shown.filter((x) => !x).length;
+  const html = frames.map((f, i) => {
+    const hasCtx = f.context_line != null;
+    return `<div class="fr ${frameInApp(f) ? '' : 'lib'} ${shown[i] ? '' : 'extra hidden'}">
+      <div class="fr-head ${hasCtx ? 'clickable' : ''}" ${hasCtx ? 'data-frtoggle' : ''}><span class="loc">${esc(f.file)}:${f.line}:${f.col}</span><span class="in">in</span><span class="fn">${esc(f.function)}</span>${hasCtx ? '<span class="chev">▾</span>' : ''}</div>
+      ${hasCtx ? `<div class="code ${i === 0 ? '' : 'hidden'}">${codeLines(f)}</div>` : ''}</div>`;
+  }).join('');
+  return `<div class="card"><div class="st-tools"><h2 style="margin:0">Stack trace</h2><button class="btn sm" id="copyStack">Copy</button></div>${head}${html}
+    ${hidden ? `<button class="btn sm" id="moreFrames" data-n="${hidden}">Show ${hidden} more frame${hidden > 1 ? 's' : ''}</button>` : ''}</div>`;
+}
+
+const CRUMB_ICON = { console: '▸', http: '🌐', fetch: '🌐', 'ui.click': '🖱', navigation: '🧭' };
+const LV = { warn: 'warning', log: 'info' };
+
+function crumbsCard(ev) {
+  const t0 = ev.timestamp || ev.ts;
+  const own = ev.http && (ev.http.status || ev.http.path)
+    ? `${ev.http.status ? ev.http.status + ' response: ' : ''}${[ev.http.method, ev.http.path || ev.http.url].filter(Boolean).join(' ')}`
+    : `${ev.type}: ${ev.message}`;
+  const rows = [`<div class="bc ev"><div class="ic">i</div><div class="body"><div class="top"><span><span class="cat" style="color:var(--accent)">Message</span> <span class="sub">· This event</span><span class="lv lv-${esc(ev.level)}">${esc(ev.level)}</span></span><span class="tm">${fmtTime(t0)}</span></div><div class="msg">${esc(own)}</div></div></div>`];
+  [...(ev.breadcrumbs || [])].reverse().forEach((b) => {
+    const lv = LV[b.level] || b.level || 'info';
+    const cat = b.category || 'default';
+    const ago = t0 && b.timestamp ? `${Math.max(0, (t0 - b.timestamp) / 1000).toFixed(1)}s before` : '';
+    rows.push(`<div class="bc"><div class="ic">${CRUMB_ICON[cat] || '•'}</div><div class="body"><div class="top"><span><span class="cat">${esc(cat.charAt(0).toUpperCase() + cat.slice(1))}</span><span class="lv lv-${esc(lv)}">${esc(lv)}</span></span><span class="tm" title="${esc(ago)}">${b.timestamp ? fmtTime(b.timestamp) : ''}</span></div>
+      <div class="msg">${esc(b.message)}</div>
+      ${b.data ? `<details><summary>${Object.keys(b.data).length} item${Object.keys(b.data).length === 1 ? '' : 's'}</summary><pre>${esc(JSON.stringify(b.data, null, 2))}</pre></details>` : ''}</div></div>`);
+  });
+  return `<div class="card"><h2>Breadcrumbs</h2>${rows.join('')}</div>`;
+}
+
+function wireStack(ev) {
+  document.querySelectorAll('[data-frtoggle]').forEach((h) => h.onclick = () => h.parentElement.querySelector('.code').classList.toggle('hidden'));
+  const more = $('#moreFrames');
+  if (more) more.onclick = () => {
+    const open = more.dataset.open !== '1';
+    document.querySelectorAll('.fr.extra').forEach((f) => f.classList.toggle('hidden', !open));
+    more.dataset.open = open ? '1' : '0';
+    more.textContent = open ? 'Hide library frames' : `Show ${more.dataset.n} more frame${more.dataset.n > 1 ? 's' : ''}`;
+  };
+  const copy = $('#copyStack');
+  if (copy) copy.onclick = () => {
+    const text = ev.stack || `${ev.type}: ${ev.message}\n` + (ev.frames || []).map((f) => `    at ${f.function} (${f.file}:${f.line}:${f.col})`).join('\n');
+    navigator.clipboard.writeText(text).then(() => toast('Stack trace copied'), () => toast('Copy failed'));
+  };
+}
+
+async function issueView(iid, evIndex = 0) {
+  const { issue, events, series } = await api('/issues/' + iid);
+  const p = projects.find((x) => x.id === issue.project_id);
+  const ev = events[evIndex];
+  const kv = (o) => o && Object.keys(o).length ? `<dl class="kv">${Object.entries(o).filter(([, v]) => v != null).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</dd>`).join('')}</dl>` : '<span class="sub">None</span>';
+  const t0 = ev?.timestamp || ev?.ts;
+  $('#main').innerHTML = `
+    <div class="sub" style="margin-bottom:8px"><a href="#/p/${issue.project_id}">← ${esc(p?.name || 'Project')}</a></div>
+    <div class="head"><div style="min-width:0"><h1 style="word-break:break-word">${esc(issue.title)}</h1>
+      <div class="cul">${esc(issue.culprit || '')}</div>
+      <div style="margin-top:6px"><span class="badge b-${issue.level}">${issue.level}</span> <span class="badge b-${issue.status}">${issue.status}</span></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${issue.status !== 'resolved' ? '<button class="btn primary" data-st="resolved">Resolve</button>' : '<button class="btn" data-st="unresolved">Reopen</button>'}
+        ${issue.status !== 'ignored' ? '<button class="btn" data-st="ignored">Ignore</button>' : ''}
+        ${issue.access === 'member' ? '' : '<button class="btn danger" id="delIssue">Delete</button>'}</div></div>
+    <div class="stats">
+      <div class="stat"><b>${fmt(issue.count)}</b><span>Events</span></div><div class="stat"><b>${fmt(issue.users)}</b><span>Users</span></div>
+      <div class="stat"><b>${ago(issue.first_seen)}</b><span>First seen</span></div><div class="stat"><b>${ago(issue.last_seen)}</b><span>Last seen</span></div>
+      <div class="stat" style="display:flex;flex-direction:column;justify-content:space-between">${spark(series)}<span>14 days</span></div></div>
+    ${ev ? `
+    <div class="evnav"><b>Event ${evIndex + 1} of ${events.length}</b><span class="sub">${when(t0)}</span>
+      <button class="btn sm" id="newer" ${evIndex === 0 ? 'disabled' : ''}>← Newer</button><button class="btn sm" id="older" ${evIndex >= events.length - 1 ? 'disabled' : ''}>Older →</button>
+      ${ev.handled === false ? '<span class="badge b-error">unhandled</span>' : ''}</div>
+    <div class="two"><div>
+      ${stackCard(ev)}
+      ${crumbsCard(ev)}
+      ${ev.extra && Object.keys(ev.extra).length ? `<div class="card"><h2>Additional data</h2>${kv(ev.extra)}</div>` : ''}
+    </div><div>
+      <div class="card"><h2>Details</h2>${kv({ 'api': ev.http && (ev.http.path || ev.http.url) && [ev.http.method, ev.http.path || ev.http.url].filter(Boolean).join(' '), 'http status': ev.http && ev.http.status, 'error code': ev.code, environment: ev.environment, release: ev.release, platform: ev.platform, sdk: ev.sdk && `${ev.sdk.name}@${ev.sdk.version}` })}</div>
+      <div class="card"><h2>User</h2>${kv(ev.user)}</div>
+      <div class="card"><h2>Tags</h2>${kv(ev.tags)}</div>
+      <div class="card"><h2>Request</h2>${kv(ev.request && { url: ev.request.url, method: ev.request.method })}</div>
+      <div class="card"><h2>Runtime</h2>${kv(ev.runtime)}</div>
+    </div></div>` : '<div class="empty card">No stored events (old events were purged by retention).</div>'}`;
+  if (ev) wireStack(ev);
+  document.querySelectorAll('[data-st]').forEach((b) => b.onclick = async () => { await api('/issues/' + iid, { method: 'PATCH', body: { status: b.dataset.st } }); loadProjects(); issueView(iid, evIndex); });
+  if ($('#delIssue')) $('#delIssue').onclick = async () => { if (confirm('Delete this issue and its events?')) { await api('/issues/' + iid, { method: 'DELETE' }); location.hash = '#/p/' + issue.project_id; } };
+  if ($('#newer')) { $('#newer').onclick = () => issueView(iid, evIndex - 1); $('#older').onclick = () => issueView(iid, evIndex + 1); }
+}
+
+/* ---------- Users (super admin) ---------- */
+const genPassword = () => {
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const a = crypto.getRandomValues(new Uint32Array(14));
+  return Array.from(a, (n) => cs[n % cs.length]).join('') + '!7';
+};
+
+function showCredentials(email, password, title, mail) {
+  const text = `iCrash Analytics\nURL: ${location.origin}\nEmail: ${email}\nPassword: ${password}`;
+  const m = modal(`<h2>${esc(title)}</h2><p class="sub">Share these credentials securely. The password can't be viewed again.</p>
+    ${mail ? (mail.email_sent ? `<div class="hint">📧 An email was sent to <b>${esc(email)}</b> (it doesn't contain the password).</div>` : `<div class="hint warn">📧 Email not sent: ${esc(mail.email_error || 'unknown error')}. Share the details yourself.</div>`) : ''}
+    <pre>${esc(text)}<button class="btn sm copy" id="cc">Copy</button></pre><div class="row-actions"><button class="btn primary" id="cd">Done</button></div>`);
+  $('#cc', m).onclick = () => navigator.clipboard.writeText(text).then(() => toast('Copied'), () => toast('Copy failed'));
+  $('#cd', m).onclick = () => m.remove();
+}
+
+async function usersView() {
+  if (!isAdmin()) { $('#main').innerHTML = '<div class="empty card">Only the super admin can manage users.</div>'; return; }
+  const [users, mailSt] = await Promise.all([api('/users'), api('/mail/status')]);
+  $('#main').innerHTML = `
+    <div class="head"><div><h1>Users</h1><div class="sub">Create accounts for your team. Each user creates their own projects and keys.</div></div>
+      <button class="btn primary" id="addUser">+ Add user</button></div>
+    <div class="hint ${mailSt.ok ? '' : 'warn'}" style="margin:0 0 14px">📧 Email: ${mailSt.ok ? 'connected. Welcome, password-reset and new-issue alert emails are sent.' : esc(mailSt.configured ? 'SMTP connection failed: ' + mailSt.reason : 'not configured (set SMTP_* in .env). Users are still created.')}</div>
+    <table><thead><tr><th>User</th><th class="hide-s">Role</th><th class="num hide-s">Projects</th><th class="hide-s">Last login</th><th></th></tr></thead><tbody>
+    ${users.map((u) => `<tr><td><div class="ttl">${esc(u.name)}</div><div class="cul">${esc(u.email)}</div></td>
+      <td class="hide-s"><span class="badge b-${u.role}">${u.role === 'superadmin' ? 'super admin' : 'user'}</span> ${u.active ? '' : '<span class="badge b-off">disabled</span>'}</td>
+      <td class="num hide-s">${u.projects}</td><td class="hide-s">${u.last_login_at ? ago(u.last_login_at) : '<span class="sub">never</span>'}</td>
+      <td class="num">${u.id === me.id ? '<span class="sub">you</span>' : `
+        <button class="btn sm" data-reset="${u.id}" data-email="${esc(u.email)}">Reset password</button>
+        <button class="btn sm" data-toggle="${u.id}" data-active="${u.active}">${u.active ? 'Disable' : 'Enable'}</button>
+        ${u.role === 'superadmin' ? '' : `<button class="btn sm danger" data-del="${u.id}" data-email="${esc(u.email)}">Delete</button>`}`}</td></tr>`).join('')}
+    </tbody></table>`;
+  $('#addUser').onclick = () => {
+    const pw = genPassword();
+    const m = modal(`<h2>Add user</h2><div id="uerr"></div>
+      <div class="field"><label>Name</label><input id="un" placeholder="Jane Doe"></div>
+      <div class="field"><label>Email</label><input id="ue" type="email" placeholder="jane@company.com"></div>
+      <div class="field"><label>Temporary password</label><div style="display:flex;gap:6px"><input id="up" value="${pw}"><button class="btn" id="ug" type="button">Generate</button></div></div>
+      <div class="row-actions"><button class="btn" id="ux">Cancel</button><button class="btn primary" id="uk">Create user</button></div>`);
+    $('#ug', m).onclick = () => { $('#up', m).value = genPassword(); };
+    $('#ux', m).onclick = () => m.remove();
+    $('#uk', m).onclick = async () => {
+      try {
+        const email = $('#ue', m).value.trim(), password = $('#up', m).value;
+        const created = await api('/users', { method: 'POST', body: { name: $('#un', m).value, email, password } });
+        m.remove(); showCredentials(email, password, 'User created', created); usersView();
+      } catch (e) { $('#uerr', m).innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+    };
+  };
+  document.querySelectorAll('[data-reset]').forEach((b) => b.onclick = async () => {
+    if (!confirm(`Reset the password for ${b.dataset.email}? They will be signed out everywhere.`)) return;
+    const password = genPassword();
+    const r = await api('/users/' + b.dataset.reset, { method: 'PATCH', body: { password } });
+    showCredentials(b.dataset.email, password, 'Password reset', r);
+  });
+  document.querySelectorAll('[data-toggle]').forEach((b) => b.onclick = async () => {
+    await api('/users/' + b.dataset.toggle, { method: 'PATCH', body: { active: b.dataset.active !== 'true' } }); usersView();
+  });
+  document.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+    if (!confirm(`Delete ${b.dataset.email}? Their projects, issues and events are deleted too. This cannot be undone.`)) return;
+    await api('/users/' + b.dataset.del, { method: 'DELETE' }); toast('User deleted'); usersView();
+  });
+}
+
+/* ---------- Guide ---------- */
+function guideView(selId) {
+  const mine = projects;
+  const sel = mine.find((p) => p.id === selId) || mine[0] || { id: 'PROJECT_ID', public_key: 'PUBLIC_KEY', platform: 'javascript', name: 'your-project' };
+  const sn = snippets(sel), names = Object.keys(sn);
+  let cur = 'Browser';
+  const step = (n, title, body) => `<div class="card step"><div class="no">${n}</div><div><h2>${title}</h2>${body}</div></div>`;
+  const draw = () => {
+    $('#main').innerHTML = `
+      <div class="head"><div><h1>User guide</h1><div class="sub">From sign-in to your first captured crash in about five minutes.</div></div></div>
+      <div class="guide-top"><span class="sub">Snippets below use the DSN of:</span>
+        ${mine.length ? `<select id="gp">${mine.map((p) => `<option value="${p.id}" ${p.id === sel.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>` : '<span class="inline-code">no project yet: placeholders shown</span>'}</div>
+      ${step(1, 'Sign in', `<p>Your administrator creates your account and gives you an email and a temporary password. After signing in, open <b>Account</b> (bottom of the sidebar) and set your own password.</p>`)}
+      ${step(2, 'Create a project', `<p>A <b>project</b> is one application or service, for example <span class="inline-code">shop-web</span> (frontend) and <span class="inline-code">shop-api</span> (backend). Keep them separate so their errors don't mix.</p>
+        <ul><li>Click <b>+ New</b> in the sidebar, name it, and pick the platform.</li><li>You see the projects you own and the ones shared with you. To share one, open its <b>Setup</b> tab, then <b>Team</b>, and add a teammate by email (they need an account first). Members can view and triage issues; only the owner manages keys, team and deletion.</li></ul>`)}
+      ${step(3, 'Copy your DSN', `<p>Open the project's <b>Setup</b> tab. The <b>DSN</b> is the address your app sends crashes to:</p>
+        <pre>http://<b>PUBLIC_KEY</b>@<b>host:port</b>/<b>PROJECT_ID</b></pre>
+        <ul><li>The key only allows <i>sending</i> events, so it is safe to ship in frontend code.</li><li>If a key leaks or you want to cut off an app, use <b>Rotate key</b>, then update the DSN in your app.</li>
+        <li>The host must be reachable <i>from where your app runs</i>. Browsers need the public URL of this server, not <span class="inline-code">localhost</span>, unless you are testing locally.</li></ul>`)}
+      ${step(4, 'Add the SDK to your app', `<div class="snip-tabs">${names.map((n) => `<button class="btn sm ${n === cur ? 'primary' : ''}" data-s="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+        <pre>${esc(sn[cur])}<button class="btn sm copy" data-copy="1">Copy</button></pre>
+        <div class="hint"><b>Frontend:</b> initialise as early as possible, before your app bundle, so startup errors are caught.<br><b>Backend:</b> put <span class="inline-code">errorHandler()</span> after your routes. In scripts or serverless functions call <span class="inline-code">await icrash.flush()</span> before exiting.</div>`)}
+      ${step(5, 'Check it works', `<ul><li>On the project's <b>Setup</b> tab click <b>Send test event</b>.</li><li>Open the <b>Issues</b> tab. The event appears within a few seconds (the list refreshes every 15 s).</li><li>Or throw a real one: <span class="inline-code">ICrash.captureException(new Error('hello'))</span>.</li></ul>
+        <div class="hint warn"><b>Nothing showing up?</b> A <span class="inline-code">401 invalid project key</span> means the key or project id in the DSN is wrong or was rotated. A network error usually means the DSN host isn't reachable from the app (firewall, <span class="inline-code">localhost</span>, or http page calling an https server). Check the browser's Network tab.</div>`)}
+      ${step(6, 'Work through issues', `<p>Identical errors are <b>grouped into one issue</b> (same error type thrown from the same place), so you see one row with a count rather than thousands.</p>
+        <ul><li><b>Unresolved</b>: needs attention. <b>Resolved</b>: fixed; it reopens automatically if it happens again. <b>Ignored</b>: hidden noise.</li>
+        <li>Open an issue for the <b>stack trace</b> (your code is highlighted, libraries are dimmed), <b>breadcrumbs</b> (clicks, requests, console output leading up to the crash), and the user, tags, request and runtime details.</li>
+        <li>Use <b>← Newer / Older →</b> to step through individual occurrences.</li>
+        <li>The <b>Stats</b> tab shows volume over time and which environments and releases are noisiest.</li></ul>`)}
+      ${step(7, 'Make events more useful', `<pre>ICrash.init({ dsn, environment: 'production', release: '1.4.2' });  // compare releases, spot regressions
+ICrash.setUser({ id: user.id, email: user.email });                  // see how many users are affected
+ICrash.setTag('plan', 'pro');                                         // searchable context
+ICrash.addBreadcrumb({ category: 'checkout', message: 'applied coupon' });
+ICrash.captureMessage('Payment slow', 'warning');                     // non-exception events</pre>
+        <ul><li>Use <span class="inline-code">beforeSend(event)</span> to remove sensitive data or drop events (return <span class="inline-code">null</span>).</li><li>Never put passwords, tokens or card numbers in messages, tags or extra data.</li><li>Old events are deleted after the retention period; issue counters persist while events exist.</li></ul>`)}
+    `;
+    $('#gp') && ($('#gp').onchange = (e) => guideView(+e.target.value));
+    document.querySelectorAll('[data-s]').forEach((b) => b.onclick = () => { cur = b.dataset.s; draw(); });
+    document.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => navigator.clipboard.writeText(sn[cur]).then(() => toast('Copied'), () => toast('Copy failed')));
+  };
+  draw();
+}
+
+/* ---------- Router ---------- */
+async function route() {
+  if (!me) return;
+  try {
+    await loadProjects();
+    const r = currentRoute();
+    if (r.page === 'users') return await usersView();
+    if (r.page === 'guide') return guideView();
+    if (r.iid) return await issueView(r.iid);
+    if (r.pid) return await projectView(r.pid, r.tab);
+    if (projects.length) { location.hash = '#/p/' + projects[0].id; return; }
+    welcome();
+  } catch (e) { if (!e.silent) $('#main').innerHTML = `<div class="empty card">Something went wrong: ${esc(e.message)}</div>`; }
+}
+
+$('#newProj').onclick = newProject;
+$('#logoutBtn').onclick = logout;
+$('#acctBtn').onclick = accountModal;
+$('#themeBtn').onclick = () => {
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+  document.documentElement.dataset.theme = cur === 'dark' ? 'light' : 'dark';
+};
+addEventListener('hashchange', route);
+setInterval(() => { if (me && !document.hidden && !document.querySelector('.modal-bg') && /^#\/p\/\d+(\/issues)?$/.test(location.hash) && document.activeElement?.tagName !== 'INPUT') route(); }, 15000);
+
+(async () => {
+  try {
+    const r = await fetch('/api/auth/me');
+    if (r.ok) { me = (await r.json()).user; enterApp(); } else showLogin();
+  } catch { showLogin(); }
+})();
+</script>
+</body>
+</html>
