@@ -357,7 +357,32 @@ async function handleApi(req, res, url, user) {
   throw httpError(404, 'not found');
 }
 
+/* The Node SDK as an installable tarball (`npm i https://<host>/sdk/icrash-node.tgz`), built once from sdk/node.
+   Deterministic (fixed mtimes) so npm's lockfile integrity hash stays stable between restarts. */
+let sdkTgz;
+function nodeSdkTarball() {
+  if (sdkTgz) return sdkTgz;
+  const dir = path.join(ROOT, 'sdk', 'node');
+  const blocks = [];
+  for (const name of ['package.json', 'index.js']) {
+    const data = fs.readFileSync(path.join(dir, name));
+    const h = Buffer.alloc(512);
+    h.write(`package/${name}`, 0, 100); h.write('0000644\0', 100); h.write('0000000\0', 108); h.write('0000000\0', 116);
+    h.write(data.length.toString(8).padStart(11, '0') + '\0', 124); h.write('00000000000\0', 136);
+    h.write('        ', 148); h.write('0', 156); h.write('ustar\0' + '00', 257);
+    h.write(h.reduce((a, b) => a + b, 0).toString(8).padStart(6, '0') + '\0 ', 148);
+    blocks.push(h, data, Buffer.alloc((512 - (data.length % 512)) % 512));
+  }
+  blocks.push(Buffer.alloc(1024));
+  return (sdkTgz = require('zlib').gzipSync(Buffer.concat(blocks), { level: 9 }));
+}
+
 function serveStatic(req, res, url) {
+  if (url.pathname === '/sdk/icrash-node.tgz') {
+    const tgz = nodeSdkTarball();
+    res.writeHead(200, { 'content-type': 'application/gzip', 'content-length': tgz.length, 'cache-control': 'public, max-age=300' });
+    return res.end(tgz);
+  }
   const rel = decodeURIComponent(url.pathname);
   const sdk = path.join(ROOT, 'sdk', 'browser', 'icrash.js');
   const uiDir = path.join(ROOT, 'ui') + path.sep;

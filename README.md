@@ -56,7 +56,7 @@ The in-app **User guide** (sidebar) walks through this with your project's real 
 <script>ICrash.init({ dsn: '...', environment: 'production', release: '1.0.0' });</script>
 ```
 
-**Node.js** (`npm i /path/to/icrash-analytics/sdk/node`)
+**Node.js** (`npm i https://<your-icrash-host>/sdk/icrash-node.tgz`; no local path needed, works in Docker builds)
 ```js
 const icrash = require('@icrash/node');
 icrash.init({ dsn: '...', release: '1.0.0' });
