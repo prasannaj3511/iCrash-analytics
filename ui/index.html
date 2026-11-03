@@ -377,7 +377,12 @@ function snippets(p) {
   ICrash.init({ dsn: '${dsn}', environment: 'production', release: '1.0.0' });
   // manual:  ICrash.captureException(err);  ICrash.captureMessage('hi', 'info');
   // context: ICrash.setUser({ id: '42', email: 'a@b.com' });  ICrash.setTag('plan', 'pro');
-<\/script>`,
+<\/script>
+
+// React / any bundler instead of the script tag:
+// npm i ${host}/sdk/icrash-browser.tgz
+// import ICrash from '@icrash/browser';
+// ICrash.init({ dsn: '${dsn}', environment: process.env.NODE_ENV, release: '1.0.0' });`,
     'Node.js': `// npm i ${host}/sdk/icrash-node.tgz
 const icrash = require('@icrash/node');
 icrash.init({ dsn: '${dsn}', environment: process.env.NODE_ENV, release: '1.0.0' });

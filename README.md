@@ -56,6 +56,12 @@ The in-app **User guide** (sidebar) walks through this with your project's real 
 <script>ICrash.init({ dsn: '...', environment: 'production', release: '1.0.0' });</script>
 ```
 
+**Browser, React / bundler** (`npm i https://<your-icrash-host>/sdk/icrash-browser.tgz`; works in Docker builds)
+```js
+import ICrash from '@icrash/browser';
+ICrash.init({ dsn: '...', release: '1.0.0' });
+```
+
 **Node.js** (`npm i https://<your-icrash-host>/sdk/icrash-node.tgz`; no local path needed, works in Docker builds)
 ```js
 const icrash = require('@icrash/node');

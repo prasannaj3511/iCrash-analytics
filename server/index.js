@@ -357,14 +357,14 @@ async function handleApi(req, res, url, user) {
   throw httpError(404, 'not found');
 }
 
-/* The Node SDK as an installable tarball (`npm i https://<host>/sdk/icrash-node.tgz`), built once from sdk/node.
-   Deterministic (fixed mtimes) so npm's lockfile integrity hash stays stable between restarts. */
-let sdkTgz;
-function nodeSdkTarball() {
-  if (sdkTgz) return sdkTgz;
-  const dir = path.join(ROOT, 'sdk', 'node');
+/* The Node and browser SDKs as installable tarballs (`npm i https://<host>/sdk/icrash-node.tgz`, `.../icrash-browser.tgz`),
+   built once from sdk/<kind>. Deterministic (fixed mtimes) so npm's lockfile integrity hash stays stable between restarts. */
+const sdkTgz = {};
+function sdkTarball(kind, files) {
+  if (sdkTgz[kind]) return sdkTgz[kind];
+  const dir = path.join(ROOT, 'sdk', kind);
   const blocks = [];
-  for (const name of ['package.json', 'index.js']) {
+  for (const name of files) {
     const data = fs.readFileSync(path.join(dir, name));
     const h = Buffer.alloc(512);
     h.write(`package/${name}`, 0, 100); h.write('0000644\0', 100); h.write('0000000\0', 108); h.write('0000000\0', 116);
@@ -374,12 +374,13 @@ function nodeSdkTarball() {
     blocks.push(h, data, Buffer.alloc((512 - (data.length % 512)) % 512));
   }
   blocks.push(Buffer.alloc(1024));
-  return (sdkTgz = require('zlib').gzipSync(Buffer.concat(blocks), { level: 9 }));
+  return (sdkTgz[kind] = require('zlib').gzipSync(Buffer.concat(blocks), { level: 9 }));
 }
 
 function serveStatic(req, res, url) {
-  if (url.pathname === '/sdk/icrash-node.tgz') {
-    const tgz = nodeSdkTarball();
+  const tarballs = { '/sdk/icrash-node.tgz': ['node', ['package.json', 'index.js']], '/sdk/icrash-browser.tgz': ['browser', ['package.json', 'icrash.js']] };
+  if (tarballs[url.pathname]) {
+    const tgz = sdkTarball(...tarballs[url.pathname]);
     res.writeHead(200, { 'content-type': 'application/gzip', 'content-length': tgz.length, 'cache-control': 'public, max-age=300' });
     return res.end(tgz);
   }
